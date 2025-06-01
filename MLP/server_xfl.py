@@ -3,13 +3,11 @@ from typing import List, Tuple, Dict, Optional
 from flwr.common import Scalar, Parameters, parameters_to_ndarrays, ndarrays_to_parameters
 import numpy as np
 
-# Agrégation des métriques
 def weighted_average(metrics: List[Tuple[int, Dict[str, Scalar]]]) -> Dict[str, Scalar]:
     total_examples = sum(num_examples for num_examples, _ in metrics)
     accuracy = sum(num_examples * m["accuracy"] for num_examples, m in metrics) / total_examples
     return {"accuracy": accuracy}
 
-# Stratégie personnalisée
 class LayerWiseStrategy(fl.server.strategy.FedAvg):
     def __init__(self, num_layers: int, **kwargs):
         super().__init__(**kwargs)
@@ -23,7 +21,7 @@ class LayerWiseStrategy(fl.server.strategy.FedAvg):
         for i, client in enumerate(sample_clients):
             config = {
                 "server_round": server_round,
-                "client_id": i,  # ← injecter un ID unique pour chaque client dans ce round
+                "client_id": i,
             }
             fit_ins_list.append((client, fl.common.FitIns(parameters, config)))
 
@@ -37,7 +35,7 @@ class LayerWiseStrategy(fl.server.strategy.FedAvg):
         for _, fit_res in results:
             layer_index = int(fit_res.metrics["layer_index"])
             num_examples = fit_res.num_examples
-            layer_params = parameters_to_ndarrays(fit_res.parameters)  # [weights, bias]
+            layer_params = parameters_to_ndarrays(fit_res.parameters)  
 
             param_pos = layer_index * 2
             for i in range(2):
@@ -53,7 +51,6 @@ class LayerWiseStrategy(fl.server.strategy.FedAvg):
                 for i in range(2):
                     aggregated[param_pos + i] = aggregated[param_pos + i] / counts[layer_index]
             else:
-                # Utiliser valeurs précédentes
                 aggregated[param_pos] = self.global_weights[param_pos]
                 aggregated[param_pos + 1] = self.global_weights[param_pos + 1]
 

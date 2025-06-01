@@ -8,7 +8,6 @@ import time
 import psutil
 import json
 
-# Exemple simple : modèle MLP 3 couches (poids/biais)
 def get_model(input_shape):
 
     model = tf.keras.models.Sequential([
@@ -21,15 +20,12 @@ def get_model(input_shape):
     return model
 
 
-# Fonction pour charger les données d'un client donné depuis les fichiers CSV
 def load_data(client_id):
-    client_dir = f"client_mpl_{client_id}"
+    client_dir = f"client_mlp_{client_id}"
     
-    # Charger les données d'entraînement
     x_train = pd.read_csv(os.path.join(client_dir, "X_train.csv")).values
     y_train = pd.read_csv(os.path.join(client_dir, "y_train.csv")).values
     
-    # Charger les données de test
     x_test = pd.read_csv(os.path.join(client_dir, "X_test.csv")).values
     y_test = pd.read_csv(os.path.join(client_dir, "y_test.csv")).values
     
@@ -49,7 +45,6 @@ class LayerWiseClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
 
-        # Récupérer ID du client injecté par le serveur
         client_id = config["client_id"]
         server_round = config["server_round"]
 
@@ -86,8 +81,8 @@ class LayerWiseClient(fl.client.NumPyClient):
         start_time = time.time()
         loss, acc = self.model.evaluate(self.x_test, self.y_test, verbose=0)
         eval_time = time.time() - start_time
-        # Enregistrer les métriques d'évaluation
-        if self.history["rounds"]:  # Si la liste n'est pas vide
+
+        if self.history["rounds"]:  
             self.history["rounds"][-1]["test_loss"] = loss
             self.history["rounds"][-1]["test_accuracy"] = acc
             self.history["rounds"][-1]["eval_time"] = eval_time

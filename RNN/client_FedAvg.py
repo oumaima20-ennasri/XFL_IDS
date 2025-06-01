@@ -8,15 +8,12 @@ import psutil
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-# Fonction pour charger les données d'un client donné depuis les fichiers CSV
 def load_client_data(client_id):
     client_dir = f"client_{client_id}"
     
-    # Charger les données d'entraînement
     x_train = pd.read_csv(os.path.join(client_dir, "X_train.csv")).values
     y_train = pd.read_csv(os.path.join(client_dir, "y_train.csv")).values
     
-    # Charger les données de test
     x_test = pd.read_csv(os.path.join(client_dir, "X_test.csv")).values
     y_test = pd.read_csv(os.path.join(client_dir, "y_test.csv")).values
     
@@ -47,7 +44,6 @@ class FlowerClient(fl.client.NumPyClient):
     def fit(self, parameters, config):
         self.model.set_weights(parameters)
 
-        # Mesurer le début du temps d'entraînement
         start_time = time.time()
         energy_before = ina.power() if ina else None
 
@@ -60,7 +56,6 @@ class FlowerClient(fl.client.NumPyClient):
             validation_data=(self.x_test, self.y_test)
         )
 
-        # Fin de l'entraînement et calcul des métriques
         train_time = time.time() - start_time
         energy_after = ina.power() if ina else None
         energy_consumed = (energy_after - energy_before) if (ina and energy_before) else None
@@ -87,13 +82,11 @@ class FlowerClient(fl.client.NumPyClient):
     def evaluate(self, parameters, config):
         self.model.set_weights(parameters)
 
-        # Mesurer le temps d'évaluation
         start_time = time.time()
         loss, accuracy = self.model.evaluate(self.x_test, self.y_test, verbose=0)
         eval_time = time.time() - start_time
 
-        # Enregistrer les métriques d'évaluation
-        if self.history["rounds"]:  # Si la liste n'est pas vide
+        if self.history["rounds"]: 
             self.history["rounds"][-1]["test_loss"] = loss
             self.history["rounds"][-1]["test_accuracy"] = accuracy
             self.history["rounds"][-1]["eval_time"] = eval_time

@@ -7,7 +7,6 @@ import time
 import psutil
 import json
 
-# Définition du modèle RNN avec 3 couches RNN
 def get_model(input_shape):
     model = tf.keras.models.Sequential([
         tf.keras.layers.Reshape((1, input_shape[0]), input_shape=input_shape),
@@ -19,7 +18,6 @@ def get_model(input_shape):
     model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
     return model
 
-# Chargement des données
 def load_data(client_id):
     client_dir = f"client_{client_id}"
     x_train = pd.read_csv(os.path.join(client_dir, "X_train.csv")).values
@@ -35,7 +33,6 @@ class LayerWiseRNNClient(fl.client.NumPyClient):
         self.x_train, self.y_train, self.x_test, self.y_test = load_data(self.cid)
         self.history = {"rounds": [], "model_type": "rnn"}
 
-        # Liste des couches ciblées (nom + index dans get_weights)
         self.layer_map = {
             0: ("rnn_1", 0, 3),  # 3 poids pour SimpleRNN
             1: ("rnn_2", 3, 6),
@@ -47,20 +44,17 @@ class LayerWiseRNNClient(fl.client.NumPyClient):
         return self.model.get_weights()
 
     def fit(self, parameters, config):
-        # Charger les poids du serveur
         self.model.set_weights(parameters)
 
         client_id = self.cid
         server_round = config["server_round"]
 
-        # Index manuel de couche
         layer_index = (server_round + client_id) % len(self.layer_map)
         layer_name, start, end = self.layer_map[layer_index]
 
         print(f"Client {client_id}: training layer '{layer_name}' (params {start} to {end})")
         start_time = time.time()        
 
-        # Entraîner tout le modèle
         history = self.model.fit(self.x_train, self.y_train, epochs=10, batch_size=64, verbose=1)
         train_time = time.time() - start_time
         round_metrics = {
@@ -77,10 +71,8 @@ class LayerWiseRNNClient(fl.client.NumPyClient):
         self.history["rounds"].append(round_metrics)
         self.save_training_history()
 
-        # Extraire les poids de la couche ciblée (index dans la layer_map)
         updated_params = self.model.get_weights()[start:end]
 
-        # Retourner uniquement les poids de la couche sélectionnée
         return updated_params, len(self.x_train), {"layer_name": layer_name, "layer_index": layer_index}
 
 
@@ -89,8 +81,8 @@ class LayerWiseRNNClient(fl.client.NumPyClient):
         start_time = time.time()
         loss, acc = self.model.evaluate(self.x_test, self.y_test, verbose=0)
         eval_time = time.time() - start_time
-        # Enregistrer les métriques d'évaluation
-        if self.history["rounds"]:  # Si la liste n'est pas vide
+
+        if self.history["rounds"]:  
             self.history["rounds"][-1]["test_loss"] = loss
             self.history["rounds"][-1]["test_accuracy"] = acc
             self.history["rounds"][-1]["eval_time"] = eval_time
