@@ -4,7 +4,7 @@ This repository contains the source code used in our scientific paper on the use
 
 ## Authors
 
-- **Ouamaima ENNASRI**
+- **Oumaima ENNASRI**
 - **Manal ABBASSI**
 - **Yann BEN MAISSA**
 - **Rachid EL MOKADEM**
